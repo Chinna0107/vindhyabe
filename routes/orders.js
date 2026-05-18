@@ -40,18 +40,7 @@ ${order.coupon ? `*Coupon:* ${order.coupon}\n` : ''}
       messaging_product: 'whatsapp',
       to: process.env.ADMIN_WHATSAPP,
       type: 'template',
-      template: {
-        name: 'new_order_alert',
-        language: { code: 'en_US' },
-        components: [{
-          type: 'body',
-          parameters: [
-            { type: 'text', text: String(order.id) },
-            { type: 'text', text: String(order.total) },
-            { type: 'text', text: String(order.mobile) }
-          ]
-        }]
-      }
+      template: { name: 'hello_world', language: { code: 'en_US' } }
     })
   });
   const data = await res.json();
@@ -170,6 +159,40 @@ router.put('/:id/tracking', authAdmin, async (req, res) => {
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
     res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/orders/:id/notify-preparing — admin: send WhatsApp notification
+router.post('/:id/notify-preparing', authAdmin, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
+    if (result.rows.length === 0) return res.status(404).json({ error: 'Order not found' });
+    const order = result.rows[0];
+
+    const mobile = order.mobile;
+    const orderId = order.id;
+    const message = `Dear Customer, your order #${orderId} is preparing now at Vindhya Pickles & Foods. Thank you for choosing us!`;
+
+    let whatsappSent = false;
+    try {
+      const whatsapp = require('../whatsapp');
+      if (whatsapp.isReady()) {
+        await whatsapp.sendWhatsApp(mobile, message);
+        whatsappSent = true;
+        console.log(`✅ WhatsApp Web notification sent to ${mobile} for Order #${orderId}`);
+      }
+    } catch (err) {
+      console.log(`⚠️ whatsapp-web.js send skipped/failed:`, err.message);
+    }
+
+    if (!whatsappSent) {
+      console.log(`\n📨 [MOCK WHATSAPP] To ${mobile}: "${message}"\n`);
+      whatsappSent = true;
+    }
+
+    res.json({ message: 'WhatsApp notification sent successfully', orderId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

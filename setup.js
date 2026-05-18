@@ -7,6 +7,10 @@ async function setupDB() {
       name VARCHAR(100),
       email VARCHAR(150) UNIQUE NOT NULL,
       mobile VARCHAR(15) UNIQUE NOT NULL,
+      password VARCHAR(255),
+      is_verified BOOLEAN DEFAULT FALSE,
+      otp VARCHAR(6),
+      otp_expiry TIMESTAMP,
       created_at TIMESTAMP DEFAULT NOW()
     );
 
@@ -22,6 +26,7 @@ async function setupDB() {
       slug VARCHAR(100) UNIQUE NOT NULL,
       name VARCHAR(150) NOT NULL,
       category VARCHAR(50),
+      subcategory VARCHAR(50),
       tag VARCHAR(50),
       emoji VARCHAR(10),
       short_desc TEXT,
@@ -53,6 +58,15 @@ async function setupDB() {
       tracking_id VARCHAR(100),
       tracking_link TEXT,
       payment_id VARCHAR(100),
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS product_reviews (
+      id SERIAL PRIMARY KEY,
+      product_id INT REFERENCES products(id) ON DELETE CASCADE,
+      customer_name VARCHAR(100) NOT NULL,
+      rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+      comment TEXT NOT NULL,
       created_at TIMESTAMP DEFAULT NOW()
     );
   `);
