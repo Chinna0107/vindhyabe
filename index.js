@@ -22,6 +22,25 @@ pool.query(`
   ALTER TABLE customers ADD COLUMN IF NOT EXISTS otp_expiry TIMESTAMP;
 
   ALTER TABLE products ADD COLUMN IF NOT EXISTS subcategory VARCHAR(50);
+  ALTER TABLE products ADD COLUMN IF NOT EXISTS coupon_applicable BOOLEAN DEFAULT true;
+
+  CREATE TABLE IF NOT EXISTS coupons (
+    id SERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    discount_percent NUMERIC NOT NULL,
+    description TEXT DEFAULT '',
+    is_active BOOLEAN DEFAULT true,
+    min_order_value NUMERIC DEFAULT NULL,
+    max_uses INTEGER DEFAULT NULL,
+    used_count INTEGER DEFAULT 0,
+    expiry_date DATE DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT NOW()
+  );
+
+  ALTER TABLE coupons ADD COLUMN IF NOT EXISTS min_order_value NUMERIC DEFAULT NULL;
+  ALTER TABLE coupons ADD COLUMN IF NOT EXISTS max_uses INTEGER DEFAULT NULL;
+  ALTER TABLE coupons ADD COLUMN IF NOT EXISTS used_count INTEGER DEFAULT 0;
+  ALTER TABLE coupons ADD COLUMN IF NOT EXISTS expiry_date DATE DEFAULT NULL;
 
   CREATE TABLE IF NOT EXISTS otps (
     email VARCHAR(150) PRIMARY KEY,
@@ -39,6 +58,7 @@ app.use('/api/products', require('./routes/products'));
 app.use('/api/orders', require('./routes/orders'));
 app.use('/api/reports', require('./routes/reports'));
 app.use('/api/upload', require('./routes/upload'));
+app.use('/api/coupons', require('./routes/coupons'));
 
 app.get('/', (req, res) => res.json({ message: '🫙 VINDHYA FOODS &  PICKLES API is running' }));
 

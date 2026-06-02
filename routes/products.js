@@ -29,14 +29,14 @@ router.get('/:slug', async (req, res) => {
 
 // POST /api/products — admin: add product
 router.post('/', authAdmin, async (req, res) => {
-  const { slug, name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, prices, images, rating, reviews } = req.body;
+  const { slug, name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, prices, images, rating, reviews, coupon_applicable, subcategory } = req.body;
   try {
     const reviewsCount = Array.isArray(reviews) ? reviews.length : (parseInt(reviews) || 0);
     const ratingVal = parseFloat(rating) || 0;
     const result = await pool.query(
-      `INSERT INTO products (slug, name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, prices, images, rating, reviews)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
-      [slug, name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, JSON.stringify(prices), images, ratingVal, reviewsCount]
+      `INSERT INTO products (slug, name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, prices, images, rating, reviews, coupon_applicable, subcategory)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16) RETURNING *`,
+      [slug, name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, JSON.stringify(prices), images, ratingVal, reviewsCount, coupon_applicable !== false, subcategory || null]
     );
     res.status(201).json(result.rows[0]);
   } catch (err) {
@@ -46,15 +46,16 @@ router.post('/', authAdmin, async (req, res) => {
 
 // PUT /api/products/:id — admin: edit product
 router.put('/:id', authAdmin, async (req, res) => {
-  const { name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, prices, images, in_stock, rating, reviews } = req.body;
+  const { name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, prices, images, in_stock, rating, reviews, coupon_applicable, subcategory } = req.body;
   try {
     const reviewsCount = Array.isArray(reviews) ? reviews.length : (parseInt(reviews) || 0);
     const ratingVal = parseFloat(rating) || 0;
     const result = await pool.query(
       `UPDATE products SET name=$1, category=$2, tag=$3, emoji=$4, short_desc=$5, full_desc=$6,
-       spice=$7, benefits=$8, ingredients=$9, prices=$10, images=$11, in_stock=$12, rating=$13, reviews=$14
-       WHERE id=$15 RETURNING *`,
-      [name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, JSON.stringify(prices), images, in_stock, ratingVal, reviewsCount, req.params.id]
+       spice=$7, benefits=$8, ingredients=$9, prices=$10, images=$11, in_stock=$12, rating=$13, reviews=$14,
+       coupon_applicable=$15, subcategory=$16
+       WHERE id=$17 RETURNING *`,
+      [name, category, tag, emoji, short_desc, full_desc, spice, benefits, ingredients, JSON.stringify(prices), images, in_stock, ratingVal, reviewsCount, coupon_applicable !== false, subcategory || null, req.params.id]
     );
     if (result.rows.length === 0) return res.status(404).json({ error: 'Product not found' });
     res.json(result.rows[0]);

@@ -91,6 +91,13 @@ router.post('/verify-payment', async (req, res) => {
       [mobile, email, name || null, JSON.stringify(items), subtotal, discount || 0, 0, total, coupon || null, address, razorpay_payment_id]
     );
     const order = result.rows[0];
+    // Increment coupon used_count if coupon was applied
+    if (coupon) {
+      await pool.query(
+        'UPDATE coupons SET used_count = COALESCE(used_count, 0) + 1 WHERE code = $1',
+        [coupon.toUpperCase().trim()]
+      ).catch(() => {}); // non-blocking
+    }
     try {
       await sendAdminWhatsApp(order.id);
     } catch (err) {
